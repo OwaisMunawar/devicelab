@@ -99,9 +99,9 @@ export function AlertsPage() {
                   key={r.id}
                   className="flex items-start justify-between gap-3 border-b border-line px-4 py-3 last:border-0"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-medium">{r.name}</p>
-                    <p className="mt-0.5 font-mono text-xs text-muted">
+                    <p className="mt-0.5 break-all font-mono text-xs text-muted">
                       {JSON.stringify(r.params)}
                     </p>
                     <p className="text-xs text-muted">cooldown {r.cooldown_s}s</p>

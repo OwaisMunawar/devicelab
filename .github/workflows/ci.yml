@@ -132,14 +132,15 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - name: Start the stack
-        run: docker compose up --build --detach --wait
+        run: docker compose up --build --detach
       - name: Wait for the simulated fleet to enrol
         run: |
           for _ in $(seq 1 60); do
-            count=$(curl -fsS -H "Authorization: Bearer dlk_demo_key_for_local_compose_only" \
-              "http://localhost:8000/v1/devices?state=available&limit=200" | python3 -c "import json,sys; print(json.load(sys.stdin)['total'])" || echo 0)
-            echo "available devices: $count"
-            [ "$count" -ge 20 ] && exit 0
+            count=$(curl -fsS --max-time 3 -H "Authorization: Bearer dlk_demo_key_for_local_compose_only" \
+              http://localhost:8000/v1/fleet/summary 2>/dev/null \
+              | python3 -c "import json,sys; print(json.load(sys.stdin)['hosts_connected'])" 2>/dev/null || echo 0)
+            echo "connected agents: $count"
+            [ "$count" -ge 4 ] && exit 0
             sleep 3
           done
           docker compose logs --tail=80

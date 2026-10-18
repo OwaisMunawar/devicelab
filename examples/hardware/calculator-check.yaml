@@ -14,11 +14,15 @@ steps:
     # The first UI step starts Appium and, on a cold cache, builds and installs WebDriverAgent.
     timeout_s: 900
     actions:
-      - {action: tap, by: accessibility_id, value: "7"}
-      - {action: tap, by: accessibility_id, value: "add"}
-      - {action: tap, by: accessibility_id, value: "8"}
-      - {action: tap, by: accessibility_id, value: "equals"}
-      - {action: assert_text, by: accessibility_id, value: "Result", contains: "15"}
+      - {action: tap, by: accessibility_id, value: "Seven"}
+      - {action: tap, by: accessibility_id, value: "Add"}
+      - {action: tap, by: accessibility_id, value: "Eight"}
+      - {action: tap, by: accessibility_id, value: "Equals"}
+      # The result is a static text whose label is "15" (with invisible direction marks).
+      - action: assert_text
+        by: predicate
+        value: "type == 'XCUIElementTypeStaticText' AND label CONTAINS '15'"
+        contains: "15"
   - id: evidence
     type: screenshot
     artifact_name: calculator-result
