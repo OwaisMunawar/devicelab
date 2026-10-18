@@ -1,0 +1,40 @@
+name: app-smoke-test
+description: Install a build, launch it, walk the first screen and fail loudly if it does not render.
+params:
+  app_path:    {type: string, required: true, description: Path of the .app under the agent's app root}
+  bundle_id:   {type: string, required: true}
+  expect_text: {type: string, default: Welcome}
+requirements:
+  count: 1
+  min_ios: "17.0"
+  model_family: iPhone
+failure_policy: abort
+steps:
+  - id: install
+    type: install_app
+    app: "{{ params.app_path }}"
+    timeout_s: 180
+    retry: {max_attempts: 2, backoff_base_s: 2}
+  - id: launch
+    type: launch_app
+    bundle_id: "{{ params.bundle_id }}"
+    retry: {max_attempts: 3, backoff_base_s: 1, backoff_max_s: 8, jitter: 0.3}
+  - id: first_screen
+    type: appium_actions
+    bundle_id: "{{ params.bundle_id }}"
+    actions:
+      - {action: wait, by: accessibility_id, value: "{{ params.expect_text }}"}
+      - {action: assert_text, by: accessibility_id, value: "{{ params.expect_text }}", contains: "{{ params.expect_text }}"}
+  - id: evidence
+    type: screenshot
+    artifact_name: first-screen
+  - id: logs
+    type: collect_logs
+    duration_s: 5
+    always: true
+    continue_on_error: true
+  - id: cleanup
+    type: terminate_app
+    bundle_id: "{{ params.bundle_id }}"
+    always: true
+    continue_on_error: true

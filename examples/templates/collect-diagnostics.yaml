@@ -1,0 +1,16 @@
+name: collect-diagnostics
+description: Grab a screenshot and a short device log from every device matching a label, for triage.
+params:
+  seconds: {type: integer, default: 20}
+requirements:
+  count: 1
+steps:
+  - id: screen
+    type: screenshot
+    artifact_name: current-screen
+    continue_on_error: true
+  - id: log
+    type: collect_logs
+    duration_s: 20
+    artifact_name: device-log
+    timeout_s: 90

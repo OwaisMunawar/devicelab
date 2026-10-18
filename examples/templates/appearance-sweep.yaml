@@ -1,0 +1,36 @@
+name: appearance-sweep
+description: Open Settings in dark mode and in a non-English locale, capture each state and collect logs.
+params:
+  locale: {type: string, default: fr_FR}
+requirements:
+  count: 1
+  min_ios: "17.0"
+steps:
+  - id: dark_mode
+    type: set_device_setting
+    setting: appearance
+    value: dark
+  - id: open_settings
+    type: launch_app
+    bundle_id: com.apple.Preferences
+    locale: "{{ params.locale }}"
+  - id: shot_dark
+    type: screenshot
+    artifact_name: settings-dark
+  - id: light_mode
+    type: set_device_setting
+    setting: appearance
+    value: light
+  - id: shot_light
+    type: screenshot
+    artifact_name: settings-light
+  - id: logs
+    type: collect_logs
+    duration_s: 3
+    always: true
+    continue_on_error: true
+  - id: close
+    type: terminate_app
+    bundle_id: com.apple.Preferences
+    always: true
+    continue_on_error: true

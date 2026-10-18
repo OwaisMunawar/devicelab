@@ -1,0 +1,29 @@
+name: app-store-screenshots
+description: Capture store screenshots for every locale and appearance on each leased device.
+params:
+  bundle_id: {type: string, required: true}
+  locales:   {type: string, default: "en_US"}
+requirements:
+  count: 2
+  model_family: iPhone
+steps:
+  - id: reset_appearance
+    type: set_device_setting
+    setting: appearance
+    value: light
+  - id: capture
+    type: capture_screenshots
+    bundle_id: "{{ params.bundle_id }}"
+    locales: [en_US, de_DE, fr_FR, ja_JP]
+    appearances: [light, dark]
+    prefix: store
+    timeout_s: 600
+    retry: {max_attempts: 2}
+    before_capture:
+      - {action: wait, seconds: 2}
+  - id: restore_appearance
+    type: set_device_setting
+    setting: appearance
+    value: light
+    always: true
+    continue_on_error: true
