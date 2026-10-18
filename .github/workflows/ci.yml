@@ -14,7 +14,7 @@ concurrency:
 
 env:
   UV_VERSION: "0.11.25"
-  NODE_VERSION: "22.12.0"
+  NODE_VERSION: "22"
   DEVICELAB_TEST_ADMIN_URL: postgresql+asyncpg://devicelab:devicelab@localhost:5432/postgres
 
 jobs:
