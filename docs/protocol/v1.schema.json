@@ -1,0 +1,1975 @@
+{
+  "agent_to_server": {
+    "$defs": {
+      "ActiveExecution": {
+        "additionalProperties": false,
+        "properties": {
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "fencing_token": {
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "lease_id": {
+            "title": "Lease Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "execution_id",
+          "lease_id",
+          "fencing_token"
+        ],
+        "title": "ActiveExecution",
+        "type": "object"
+      },
+      "ArtifactRef": {
+        "additionalProperties": false,
+        "properties": {
+          "content_type": {
+            "maxLength": 64,
+            "title": "Content Type",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "screenshot",
+              "log",
+              "result"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 128,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "content_type"
+        ],
+        "title": "ArtifactRef",
+        "type": "object"
+      },
+      "ArtifactUpload": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "data_b64": {
+            "title": "Data B64",
+            "type": "string"
+          },
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "fencing_token": {
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "step_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Step Index"
+          },
+          "type": {
+            "const": "artifact_upload",
+            "default": "artifact_upload",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "execution_id",
+          "fencing_token",
+          "artifact",
+          "data_b64"
+        ],
+        "title": "ArtifactUpload",
+        "type": "object"
+      },
+      "DeviceReport": {
+        "additionalProperties": false,
+        "properties": {
+          "health": {
+            "$ref": "#/$defs/HealthReport"
+          },
+          "ios_version": {
+            "maxLength": 32,
+            "title": "Ios Version",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "simulator",
+              "usb",
+              "fake"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 16,
+            "title": "Labels",
+            "type": "array"
+          },
+          "model": {
+            "maxLength": 64,
+            "title": "Model",
+            "type": "string"
+          },
+          "model_family": {
+            "maxLength": 32,
+            "title": "Model Family",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 128,
+            "title": "Name",
+            "type": "string"
+          },
+          "udid": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Udid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "udid",
+          "name",
+          "model",
+          "model_family",
+          "ios_version",
+          "kind",
+          "health"
+        ],
+        "title": "DeviceReport",
+        "type": "object"
+      },
+      "ExecutionFinished": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error"
+          },
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Failure Code"
+          },
+          "fencing_token": {
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "reboots": {
+            "default": 0,
+            "title": "Reboots",
+            "type": "integer"
+          },
+          "session_restarts": {
+            "default": 0,
+            "title": "Session Restarts",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "type": {
+            "const": "execution_finished",
+            "default": "execution_finished",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "execution_id",
+          "fencing_token",
+          "state"
+        ],
+        "title": "ExecutionFinished",
+        "type": "object"
+      },
+      "HealthReport": {
+        "additionalProperties": false,
+        "description": "Deliberately unconstrained: range checks are domain policy, so a device reporting\nnonsense becomes a quarantine decision instead of a dropped frame.",
+        "properties": {
+          "battery_pct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Battery Pct"
+          },
+          "connectivity": {
+            "default": "connected",
+            "title": "Connectivity",
+            "type": "string"
+          },
+          "storage_free_gb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Storage Free Gb"
+          },
+          "thermal": {
+            "default": "nominal",
+            "title": "Thermal",
+            "type": "string"
+          },
+          "udid": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Udid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "udid"
+        ],
+        "title": "HealthReport",
+        "type": "object"
+      },
+      "Heartbeat": {
+        "additionalProperties": false,
+        "properties": {
+          "devices": {
+            "items": {
+              "$ref": "#/$defs/HealthReport"
+            },
+            "title": "Devices",
+            "type": "array"
+          },
+          "executions": {
+            "items": {
+              "$ref": "#/$defs/ActiveExecution"
+            },
+            "title": "Executions",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "heartbeat",
+            "default": "heartbeat",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "devices"
+        ],
+        "title": "Heartbeat",
+        "type": "object"
+      },
+      "Hello": {
+        "additionalProperties": false,
+        "properties": {
+          "active_executions": {
+            "items": {
+              "$ref": "#/$defs/ActiveExecution"
+            },
+            "title": "Active Executions",
+            "type": "array"
+          },
+          "agent_version": {
+            "title": "Agent Version",
+            "type": "string"
+          },
+          "credential": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Credential"
+          },
+          "enrolment_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Enrolment Token"
+          },
+          "host_name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Host Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "protocol_version": {
+            "default": 1,
+            "title": "Protocol Version",
+            "type": "integer"
+          },
+          "type": {
+            "const": "hello",
+            "default": "hello",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "agent_version",
+          "host_name"
+        ],
+        "title": "Hello",
+        "type": "object"
+      },
+      "Inventory": {
+        "additionalProperties": false,
+        "properties": {
+          "devices": {
+            "items": {
+              "$ref": "#/$defs/DeviceReport"
+            },
+            "title": "Devices",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "inventory",
+            "default": "inventory",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "devices"
+        ],
+        "title": "Inventory",
+        "type": "object"
+      },
+      "StepFinished": {
+        "additionalProperties": false,
+        "properties": {
+          "attempts": {
+            "default": 1,
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "duration_ms": {
+            "default": 0,
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Error"
+          },
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Failure Code"
+          },
+          "fencing_token": {
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "output": {
+            "additionalProperties": true,
+            "title": "Output",
+            "type": "object"
+          },
+          "state": {
+            "enum": [
+              "succeeded",
+              "failed",
+              "skipped"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "step_index": {
+            "title": "Step Index",
+            "type": "integer"
+          },
+          "type": {
+            "const": "step_finished",
+            "default": "step_finished",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "execution_id",
+          "fencing_token",
+          "step_index",
+          "state"
+        ],
+        "title": "StepFinished",
+        "type": "object"
+      },
+      "StepLog": {
+        "additionalProperties": false,
+        "properties": {
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "fencing_token": {
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "default": "info",
+            "enum": [
+              "debug",
+              "info",
+              "warning",
+              "error"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "message": {
+            "maxLength": 4000,
+            "title": "Message",
+            "type": "string"
+          },
+          "step_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Step Index"
+          },
+          "type": {
+            "const": "step_log",
+            "default": "step_log",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "execution_id",
+          "fencing_token",
+          "message"
+        ],
+        "title": "StepLog",
+        "type": "object"
+      },
+      "StepStarted": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "default": 1,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "fencing_token": {
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "step_id": {
+            "title": "Step Id",
+            "type": "string"
+          },
+          "step_index": {
+            "title": "Step Index",
+            "type": "integer"
+          },
+          "type": {
+            "const": "step_started",
+            "default": "step_started",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "execution_id",
+          "fencing_token",
+          "step_index",
+          "step_id"
+        ],
+        "title": "StepStarted",
+        "type": "object"
+      }
+    },
+    "discriminator": {
+      "mapping": {
+        "artifact_upload": "#/$defs/ArtifactUpload",
+        "execution_finished": "#/$defs/ExecutionFinished",
+        "heartbeat": "#/$defs/Heartbeat",
+        "hello": "#/$defs/Hello",
+        "inventory": "#/$defs/Inventory",
+        "step_finished": "#/$defs/StepFinished",
+        "step_log": "#/$defs/StepLog",
+        "step_started": "#/$defs/StepStarted"
+      },
+      "propertyName": "type"
+    },
+    "oneOf": [
+      {
+        "$ref": "#/$defs/Hello"
+      },
+      {
+        "$ref": "#/$defs/Inventory"
+      },
+      {
+        "$ref": "#/$defs/Heartbeat"
+      },
+      {
+        "$ref": "#/$defs/StepStarted"
+      },
+      {
+        "$ref": "#/$defs/StepLog"
+      },
+      {
+        "$ref": "#/$defs/StepFinished"
+      },
+      {
+        "$ref": "#/$defs/ArtifactUpload"
+      },
+      {
+        "$ref": "#/$defs/ExecutionFinished"
+      }
+    ]
+  },
+  "protocol_version": 1,
+  "server_to_agent": {
+    "$defs": {
+      "Ack": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Code"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ok": {
+            "default": true,
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "ref_id": {
+            "title": "Ref Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "ack",
+            "default": "ack",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ref_id"
+        ],
+        "title": "Ack",
+        "type": "object"
+      },
+      "AppiumActions": {
+        "additionalProperties": false,
+        "properties": {
+          "actions": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "assert_text": "#/$defs/AssertText",
+                  "swipe": "#/$defs/Swipe",
+                  "tap": "#/$defs/Tap",
+                  "type": "#/$defs/TypeText",
+                  "wait": "#/$defs/Wait"
+                },
+                "propertyName": "action"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/Tap"
+                },
+                {
+                  "$ref": "#/$defs/TypeText"
+                },
+                {
+                  "$ref": "#/$defs/Swipe"
+                },
+                {
+                  "$ref": "#/$defs/AssertText"
+                },
+                {
+                  "$ref": "#/$defs/Wait"
+                }
+              ]
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Actions",
+            "type": "array"
+          },
+          "always": {
+            "default": false,
+            "title": "Always",
+            "type": "boolean"
+          },
+          "bundle_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Bundle Id"
+          },
+          "continue_on_error": {
+            "default": false,
+            "title": "Continue On Error",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "retry": {
+            "$ref": "#/$defs/RetryPolicy",
+            "default": {
+              "backoff_base_s": 1.0,
+              "backoff_max_s": 30.0,
+              "jitter": 0.2,
+              "max_attempts": 1
+            }
+          },
+          "timeout_s": {
+            "default": 60,
+            "maximum": 1800,
+            "minimum": 1,
+            "title": "Timeout S",
+            "type": "integer"
+          },
+          "type": {
+            "const": "appium_actions",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "actions"
+        ],
+        "title": "AppiumActions",
+        "type": "object"
+      },
+      "AssertText": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "assert_text",
+            "title": "Action",
+            "type": "string"
+          },
+          "by": {
+            "default": "accessibility_id",
+            "enum": [
+              "accessibility_id",
+              "name",
+              "predicate",
+              "class_chain",
+              "xpath"
+            ],
+            "title": "By",
+            "type": "string"
+          },
+          "contains": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Contains"
+          },
+          "equals": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Equals"
+          },
+          "value": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "value"
+        ],
+        "title": "AssertText",
+        "type": "object"
+      },
+      "Assign": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Correlation Id"
+          },
+          "device_udid": {
+            "title": "Device Udid",
+            "type": "string"
+          },
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "failure_policy": {
+            "enum": [
+              "abort",
+              "continue"
+            ],
+            "title": "Failure Policy",
+            "type": "string"
+          },
+          "fencing_token": {
+            "title": "Fencing Token",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "lease_id": {
+            "title": "Lease Id",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "appium_actions": "#/$defs/AppiumActions",
+                  "capture_screenshots": "#/$defs/CaptureScreenshots",
+                  "collect_logs": "#/$defs/CollectLogs",
+                  "install_app": "#/$defs/InstallApp",
+                  "launch_app": "#/$defs/LaunchApp",
+                  "reboot_device": "#/$defs/RebootDevice",
+                  "screenshot": "#/$defs/Screenshot",
+                  "set_device_setting": "#/$defs/SetDeviceSetting",
+                  "terminate_app": "#/$defs/TerminateApp"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/InstallApp"
+                },
+                {
+                  "$ref": "#/$defs/LaunchApp"
+                },
+                {
+                  "$ref": "#/$defs/TerminateApp"
+                },
+                {
+                  "$ref": "#/$defs/AppiumActions"
+                },
+                {
+                  "$ref": "#/$defs/Screenshot"
+                },
+                {
+                  "$ref": "#/$defs/CaptureScreenshots"
+                },
+                {
+                  "$ref": "#/$defs/CollectLogs"
+                },
+                {
+                  "$ref": "#/$defs/SetDeviceSetting"
+                },
+                {
+                  "$ref": "#/$defs/RebootDevice"
+                }
+              ]
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "type": {
+            "const": "assign",
+            "default": "assign",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "execution_id",
+          "job_id",
+          "lease_id",
+          "fencing_token",
+          "attempt",
+          "device_udid",
+          "failure_policy",
+          "steps"
+        ],
+        "title": "Assign",
+        "type": "object"
+      },
+      "Cancel": {
+        "additionalProperties": false,
+        "properties": {
+          "execution_id": {
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "default": "",
+            "title": "Reason",
+            "type": "string"
+          },
+          "type": {
+            "const": "cancel",
+            "default": "cancel",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "execution_id"
+        ],
+        "title": "Cancel",
+        "type": "object"
+      },
+      "CaptureScreenshots": {
+        "additionalProperties": false,
+        "properties": {
+          "always": {
+            "default": false,
+            "title": "Always",
+            "type": "boolean"
+          },
+          "appearances": {
+            "default": [
+              "light"
+            ],
+            "items": {
+              "enum": [
+                "light",
+                "dark"
+              ],
+              "type": "string"
+            },
+            "title": "Appearances",
+            "type": "array"
+          },
+          "before_capture": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "assert_text": "#/$defs/AssertText",
+                  "swipe": "#/$defs/Swipe",
+                  "tap": "#/$defs/Tap",
+                  "type": "#/$defs/TypeText",
+                  "wait": "#/$defs/Wait"
+                },
+                "propertyName": "action"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/Tap"
+                },
+                {
+                  "$ref": "#/$defs/TypeText"
+                },
+                {
+                  "$ref": "#/$defs/Swipe"
+                },
+                {
+                  "$ref": "#/$defs/AssertText"
+                },
+                {
+                  "$ref": "#/$defs/Wait"
+                }
+              ]
+            },
+            "maxItems": 20,
+            "title": "Before Capture",
+            "type": "array"
+          },
+          "bundle_id": {
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "continue_on_error": {
+            "default": false,
+            "title": "Continue On Error",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "locales": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Locales",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "prefix": {
+            "default": "shot",
+            "title": "Prefix",
+            "type": "string"
+          },
+          "retry": {
+            "$ref": "#/$defs/RetryPolicy",
+            "default": {
+              "backoff_base_s": 1.0,
+              "backoff_max_s": 30.0,
+              "jitter": 0.2,
+              "max_attempts": 1
+            }
+          },
+          "timeout_s": {
+            "default": 60,
+            "maximum": 1800,
+            "minimum": 1,
+            "title": "Timeout S",
+            "type": "integer"
+          },
+          "type": {
+            "const": "capture_screenshots",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "bundle_id",
+          "locales"
+        ],
+        "title": "CaptureScreenshots",
+        "type": "object"
+      },
+      "CollectLogs": {
+        "additionalProperties": false,
+        "properties": {
+          "always": {
+            "default": false,
+            "title": "Always",
+            "type": "boolean"
+          },
+          "artifact_name": {
+            "default": "device-log",
+            "title": "Artifact Name",
+            "type": "string"
+          },
+          "continue_on_error": {
+            "default": false,
+            "title": "Continue On Error",
+            "type": "boolean"
+          },
+          "duration_s": {
+            "default": 5,
+            "maximum": 300,
+            "minimum": 1,
+            "title": "Duration S",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "retry": {
+            "$ref": "#/$defs/RetryPolicy",
+            "default": {
+              "backoff_base_s": 1.0,
+              "backoff_max_s": 30.0,
+              "jitter": 0.2,
+              "max_attempts": 1
+            }
+          },
+          "timeout_s": {
+            "default": 60,
+            "maximum": 1800,
+            "minimum": 1,
+            "title": "Timeout S",
+            "type": "integer"
+          },
+          "type": {
+            "const": "collect_logs",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "title": "CollectLogs",
+        "type": "object"
+      },
+      "InstallApp": {
+        "additionalProperties": false,
+        "properties": {
+          "always": {
+            "default": false,
+            "title": "Always",
+            "type": "boolean"
+          },
+          "app": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "App",
+            "type": "string"
+          },
+          "continue_on_error": {
+            "default": false,
+            "title": "Continue On Error",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "retry": {
+            "$ref": "#/$defs/RetryPolicy",
+            "default": {
+              "backoff_base_s": 1.0,
+              "backoff_max_s": 30.0,
+              "jitter": 0.2,
+              "max_attempts": 1
+            }
+          },
+          "timeout_s": {
+            "default": 60,
+            "maximum": 1800,
+            "minimum": 1,
+            "title": "Timeout S",
+            "type": "integer"
+          },
+          "type": {
+            "const": "install_app",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "app"
+        ],
+        "title": "InstallApp",
+        "type": "object"
+      },
+      "LaunchApp": {
+        "additionalProperties": false,
+        "properties": {
+          "always": {
+            "default": false,
+            "title": "Always",
+            "type": "boolean"
+          },
+          "bundle_id": {
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "continue_on_error": {
+            "default": false,
+            "title": "Continue On Error",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Locale"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "retry": {
+            "$ref": "#/$defs/RetryPolicy",
+            "default": {
+              "backoff_base_s": 1.0,
+              "backoff_max_s": 30.0,
+              "jitter": 0.2,
+              "max_attempts": 1
+            }
+          },
+          "timeout_s": {
+            "default": 60,
+            "maximum": 1800,
+            "minimum": 1,
+            "title": "Timeout S",
+            "type": "integer"
+          },
+          "type": {
+            "const": "launch_app",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "bundle_id"
+        ],
+        "title": "LaunchApp",
+        "type": "object"
+      },
+      "RebootDevice": {
+        "additionalProperties": false,
+        "properties": {
+          "always": {
+            "default": false,
+            "title": "Always",
+            "type": "boolean"
+          },
+          "continue_on_error": {
+            "default": false,
+            "title": "Continue On Error",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "retry": {
+            "$ref": "#/$defs/RetryPolicy",
+            "default": {
+              "backoff_base_s": 1.0,
+              "backoff_max_s": 30.0,
+              "jitter": 0.2,
+              "max_attempts": 1
+            }
+          },
+          "timeout_s": {
+            "default": 60,
+            "maximum": 1800,
+            "minimum": 1,
+            "title": "Timeout S",
+            "type": "integer"
+          },
+          "type": {
+            "const": "reboot_device",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "title": "RebootDevice",
+        "type": "object"
+      },
+      "RetryPolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "backoff_base_s": {
+            "default": 1.0,
+            "maximum": 60,
+            "minimum": 0,
+            "title": "Backoff Base S",
+            "type": "number"
+          },
+          "backoff_max_s": {
+            "default": 30.0,
+            "maximum": 600,
+            "minimum": 0,
+            "title": "Backoff Max S",
+            "type": "number"
+          },
+          "jitter": {
+            "default": 0.2,
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Jitter",
+            "type": "number"
+          },
+          "max_attempts": {
+            "default": 1,
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Max Attempts",
+            "type": "integer"
+          }
+        },
+        "title": "RetryPolicy",
+        "type": "object"
+      },
+      "Screenshot": {
+        "additionalProperties": false,
+        "properties": {
+          "always": {
+            "default": false,
+            "title": "Always",
+            "type": "boolean"
+          },
+          "artifact_name": {
+            "default": "screenshot",
+            "title": "Artifact Name",
+            "type": "string"
+          },
+          "continue_on_error": {
+            "default": false,
+            "title": "Continue On Error",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "retry": {
+            "$ref": "#/$defs/RetryPolicy",
+            "default": {
+              "backoff_base_s": 1.0,
+              "backoff_max_s": 30.0,
+              "jitter": 0.2,
+              "max_attempts": 1
+            }
+          },
+          "timeout_s": {
+            "default": 60,
+            "maximum": 1800,
+            "minimum": 1,
+            "title": "Timeout S",
+            "type": "integer"
+          },
+          "type": {
+            "const": "screenshot",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "title": "Screenshot",
+        "type": "object"
+      },
+      "ServerError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "fatal": {
+            "default": false,
+            "title": "Fatal",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "const": "error",
+            "default": "error",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ServerError",
+        "type": "object"
+      },
+      "SetDeviceSetting": {
+        "additionalProperties": false,
+        "properties": {
+          "always": {
+            "default": false,
+            "title": "Always",
+            "type": "boolean"
+          },
+          "continue_on_error": {
+            "default": false,
+            "title": "Continue On Error",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "retry": {
+            "$ref": "#/$defs/RetryPolicy",
+            "default": {
+              "backoff_base_s": 1.0,
+              "backoff_max_s": 30.0,
+              "jitter": 0.2,
+              "max_attempts": 1
+            }
+          },
+          "setting": {
+            "enum": [
+              "appearance",
+              "locale",
+              "timezone"
+            ],
+            "title": "Setting",
+            "type": "string"
+          },
+          "timeout_s": {
+            "default": 60,
+            "maximum": 1800,
+            "minimum": 1,
+            "title": "Timeout S",
+            "type": "integer"
+          },
+          "type": {
+            "const": "set_device_setting",
+            "title": "Type",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "setting",
+          "value"
+        ],
+        "title": "SetDeviceSetting",
+        "type": "object"
+      },
+      "Swipe": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "swipe",
+            "title": "Action",
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "up",
+              "down",
+              "left",
+              "right"
+            ],
+            "title": "Direction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "direction"
+        ],
+        "title": "Swipe",
+        "type": "object"
+      },
+      "Tap": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "tap",
+            "title": "Action",
+            "type": "string"
+          },
+          "by": {
+            "default": "accessibility_id",
+            "enum": [
+              "accessibility_id",
+              "name",
+              "predicate",
+              "class_chain",
+              "xpath"
+            ],
+            "title": "By",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "value"
+        ],
+        "title": "Tap",
+        "type": "object"
+      },
+      "TerminateApp": {
+        "additionalProperties": false,
+        "properties": {
+          "always": {
+            "default": false,
+            "title": "Always",
+            "type": "boolean"
+          },
+          "bundle_id": {
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "continue_on_error": {
+            "default": false,
+            "title": "Continue On Error",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "retry": {
+            "$ref": "#/$defs/RetryPolicy",
+            "default": {
+              "backoff_base_s": 1.0,
+              "backoff_max_s": 30.0,
+              "jitter": 0.2,
+              "max_attempts": 1
+            }
+          },
+          "timeout_s": {
+            "default": 60,
+            "maximum": 1800,
+            "minimum": 1,
+            "title": "Timeout S",
+            "type": "integer"
+          },
+          "type": {
+            "const": "terminate_app",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "bundle_id"
+        ],
+        "title": "TerminateApp",
+        "type": "object"
+      },
+      "TypeText": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "type",
+            "title": "Action",
+            "type": "string"
+          },
+          "by": {
+            "default": "accessibility_id",
+            "enum": [
+              "accessibility_id",
+              "name",
+              "predicate",
+              "class_chain",
+              "xpath"
+            ],
+            "title": "By",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 1024,
+            "title": "Text",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "value",
+          "text"
+        ],
+        "title": "TypeText",
+        "type": "object"
+      },
+      "Wait": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "wait",
+            "title": "Action",
+            "type": "string"
+          },
+          "by": {
+            "anyOf": [
+              {
+                "enum": [
+                  "accessibility_id",
+                  "name",
+                  "predicate",
+                  "class_chain",
+                  "xpath"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "By"
+          },
+          "seconds": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "maximum": 120,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Seconds"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Value"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "Wait",
+        "type": "object"
+      },
+      "Welcome": {
+        "additionalProperties": false,
+        "properties": {
+          "credential": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Credential"
+          },
+          "heartbeat_interval_s": {
+            "title": "Heartbeat Interval S",
+            "type": "number"
+          },
+          "host_id": {
+            "title": "Host Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lease_ttl_s": {
+            "title": "Lease Ttl S",
+            "type": "number"
+          },
+          "site": {
+            "title": "Site",
+            "type": "string"
+          },
+          "type": {
+            "const": "welcome",
+            "default": "welcome",
+            "title": "Type",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "host_id",
+          "site",
+          "heartbeat_interval_s",
+          "lease_ttl_s"
+        ],
+        "title": "Welcome",
+        "type": "object"
+      }
+    },
+    "discriminator": {
+      "mapping": {
+        "ack": "#/$defs/Ack",
+        "assign": "#/$defs/Assign",
+        "cancel": "#/$defs/Cancel",
+        "error": "#/$defs/ServerError",
+        "welcome": "#/$defs/Welcome"
+      },
+      "propertyName": "type"
+    },
+    "oneOf": [
+      {
+        "$ref": "#/$defs/Welcome"
+      },
+      {
+        "$ref": "#/$defs/Assign"
+      },
+      {
+        "$ref": "#/$defs/Cancel"
+      },
+      {
+        "$ref": "#/$defs/Ack"
+      },
+      {
+        "$ref": "#/$defs/ServerError"
+      }
+    ]
+  }
+}
