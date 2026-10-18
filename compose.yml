@@ -1,0 +1,66 @@
+# One command brings up the whole demo: Postgres, the API with its scheduler, the dashboard,
+# and an agent that simulates 24 devices across 4 sites.
+#
+#   docker compose up --build        then open http://localhost:8080
+#
+# The API key below is a published demo value, not a secret. Replace it for anything real.
+name: devicelab
+
+x-demo-key: &demo-key dlk_demo_key_for_local_compose_only
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: devicelab
+      POSTGRES_PASSWORD: devicelab
+      POSTGRES_DB: devicelab
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devicelab -d devicelab"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    environment:
+      DEVICELAB_DATABASE_URL: postgresql+asyncpg://devicelab:devicelab@db:5432/devicelab
+      DEVICELAB_BOOTSTRAP_ADMIN_KEY: *demo-key
+      DEVICELAB_DEMO: "1"
+      DEVICELAB_CORS_ORIGINS: '["http://localhost:8080"]'
+      DEVICELAB_LOG_JSON: "1"
+    volumes:
+      - artifacts:/data/artifacts
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  agent:
+    build: .
+    command: ["devicelab-agent", "demo", "--api", "http://api:8000", "--state-dir", "/state"]
+    environment:
+      DEVICELAB_API_KEY: *demo-key
+    volumes:
+      - agent-state:/state
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    build: ./web
+    environment:
+      DEVICELAB_DEMO_KEY: *demo-key
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  artifacts:
+  agent-state:

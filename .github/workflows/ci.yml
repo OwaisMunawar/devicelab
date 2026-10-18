@@ -1,0 +1,168 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.11.25"
+  NODE_VERSION: "22.12.0"
+  DEVICELAB_TEST_ADMIN_URL: postgresql+asyncpg://devicelab:devicelab@localhost:5432/postgres
+
+jobs:
+  backend:
+    name: Backend (lint, types, tests, coverage gate)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: devicelab
+          POSTGRES_PASSWORD: devicelab
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U devicelab"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Ruff lint
+        run: uv run ruff check .
+      - name: Ruff format
+        run: uv run ruff format --check .
+      - name: mypy --strict
+        run: uv run mypy
+      - name: Tests, with a 90% gate on domain and application
+        run: >-
+          uv run pytest -m "not chaos" --ignore=tests/chaos
+          --cov=devicelab.domain --cov=devicelab.application --cov-fail-under=90
+          --cov-report=term-missing
+
+  scheduler-and-chaos:
+    name: Scheduler properties, chaos and load
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: devicelab
+          POSTGRES_PASSWORD: devicelab
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U devicelab"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Scheduler and lease property tests (Hypothesis)
+        run: uv run pytest tests/domain/test_scheduler.py tests/application/test_scheduling.py -q
+      - name: Chaos scenarios
+        run: uv run pytest tests/chaos -m chaos -q
+      - name: Load test, 50 devices across 5 sites and 520 jobs
+        run: >-
+          uv run python -m scripts.loadtest --devices 50 --sites 5 --jobs 520
+          --database-url postgresql+asyncpg://devicelab:devicelab@localhost:5432/devicelab_loadtest
+          --admin-url postgresql+asyncpg://devicelab:devicelab@localhost:5432/postgres
+          --json load-report.json
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: load-report
+          path: load-report.json
+          if-no-files-found: ignore
+
+  web:
+    name: Dashboard (lint, types, tests, build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: ESLint and Prettier
+        run: npm run lint
+      - name: TypeScript (strict)
+        run: npm run typecheck
+      - name: Vitest
+        run: npm test
+      - name: Production build
+        run: npm run build
+
+  compose-smoke:
+    name: Compose stack and Playwright smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: [backend, web]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Start the stack
+        run: docker compose up --build --detach --wait
+      - name: Wait for the simulated fleet to enrol
+        run: |
+          for _ in $(seq 1 60); do
+            count=$(curl -fsS -H "Authorization: Bearer dlk_demo_key_for_local_compose_only" \
+              "http://localhost:8000/v1/devices?state=available&limit=200" | python3 -c "import json,sys; print(json.load(sys.stdin)['total'])" || echo 0)
+            echo "available devices: $count"
+            [ "$count" -ge 20 ] && exit 0
+            sleep 3
+          done
+          docker compose logs --tail=80
+          exit 1
+      - name: Install Playwright
+        working-directory: web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Smoke test
+        working-directory: web
+        run: npx playwright test
+        env:
+          DEVICELAB_URL: http://localhost:8080
+      - uses: actions/upload-artifact@v7.0.2
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/playwright-report
+          if-no-files-found: ignore
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs --tail=120
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes --remove-orphans
