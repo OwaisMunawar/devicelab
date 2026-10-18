@@ -1,0 +1,34 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+*.egg-info/
+
+# repo-local tool caches (Appium, WebDriverAgent derived data)
+.cache/
+artifacts-data/
+
+# node
+node_modules/
+web/dist/
+web/coverage/
+web/test-results/
+web/playwright-report/
+
+# env and secrets
+.env
+.env.*
+!.env.example
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/
