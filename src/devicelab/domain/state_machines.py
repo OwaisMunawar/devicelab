@@ -20,7 +20,7 @@ DEVICE_TRANSITIONS: Mapping[DeviceState, frozenset[DeviceState]] = {
 }
 
 JOB_TRANSITIONS: Mapping[JobState, frozenset[JobState]] = {
-    J.QUEUED: frozenset({J.LEASED, J.CANCELLED}),
+    J.QUEUED: frozenset({J.LEASED, J.CANCELLED, J.FAILED}),
     J.LEASED: frozenset({J.RUNNING, J.QUEUED, J.FAILED, J.CANCELLED}),
     J.RUNNING: frozenset({J.SUCCEEDED, J.FAILED, J.QUEUED, J.CANCELLED}),
     J.SUCCEEDED: frozenset(),
