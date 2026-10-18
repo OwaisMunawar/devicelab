@@ -44,6 +44,9 @@ services:
     command: ["devicelab-agent", "demo", "--api", "http://api:8000", "--state-dir", "/state"]
     environment:
       DEVICELAB_API_KEY: *demo-key
+    # The image's HTTP healthcheck is for the API; the agent has no server.
+    healthcheck:
+      disable: true
     volumes:
       - agent-state:/state
     depends_on:

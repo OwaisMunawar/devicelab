@@ -81,6 +81,7 @@ def _build(args: argparse.Namespace) -> tuple[DeviceProvider, UiDriver | None]:
                 appium_binary=args.appium_bin,
                 # Signing identity details come from the environment so they never land in a repo.
                 team_id=os.environ.get("DEVICELAB_TEAM_ID"),
+                signing_id=os.environ.get("DEVICELAB_SIGNING_ID", "Apple Development"),
                 wda_bundle_id=args.wda_bundle_id,
             )
         )

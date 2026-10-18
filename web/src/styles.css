@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* Design tokens. Light is the default; dark applies by system preference unless the user
+   chose a theme explicitly via data-theme. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --line: #e2e5ea;
+  --fg: #12151c;
+  --muted: #566073;
+  --accent: #4338ca;
+  --accent-fg: #ffffff;
+  --accent-soft: #e9e8fb;
+  --danger: #b42318;
+  --focus: #4338ca;
+
+  --available-bg: #e3f5e9;
+  --available-fg: #14623a;
+  --available-dot: #1f9d55;
+  --leased-bg: #e1effd;
+  --leased-fg: #0a559b;
+  --leased-dot: #2b8be0;
+  --busy-bg: #ebe8fc;
+  --busy-fg: #4535ae;
+  --busy-dot: #6d58e8;
+  --offline-bg: #eceef2;
+  --offline-fg: #444e5d;
+  --offline-dot: #8993a4;
+  --quarantined-bg: #fde8e7;
+  --quarantined-fg: #9c1f1a;
+  --quarantined-dot: #dc3d34;
+  --maintenance-bg: #fcefd6;
+  --maintenance-fg: #7d5200;
+  --maintenance-dot: #d99200;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c0f15;
+    --surface: #141922;
+    --surface-2: #1b212c;
+    --line: #272e3b;
+    --fg: #e9ecf3;
+    --muted: #9ba5b8;
+    --accent: #8f94ff;
+    --accent-fg: #0c0f15;
+    --accent-soft: #232650;
+    --danger: #ff8a80;
+    --focus: #8f94ff;
+
+    --available-bg: #11301f;
+    --available-fg: #84e3a6;
+    --available-dot: #3fcf7a;
+    --leased-bg: #112840;
+    --leased-fg: #84c4ff;
+    --leased-dot: #4aa3f5;
+    --busy-bg: #221e49;
+    --busy-fg: #b9aeff;
+    --busy-dot: #8c7bff;
+    --offline-bg: #222834;
+    --offline-fg: #a7b0c0;
+    --offline-dot: #6f7a8d;
+    --quarantined-bg: #3a1716;
+    --quarantined-fg: #ffa39b;
+    --quarantined-dot: #f0594f;
+    --maintenance-bg: #38290c;
+    --maintenance-fg: #f4c870;
+    --maintenance-dot: #e8a419;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0c0f15;
+  --surface: #141922;
+  --surface-2: #1b212c;
+  --line: #272e3b;
+  --fg: #e9ecf3;
+  --muted: #9ba5b8;
+  --accent: #8f94ff;
+  --accent-fg: #0c0f15;
+  --accent-soft: #232650;
+  --danger: #ff8a80;
+  --focus: #8f94ff;
+
+  --available-bg: #11301f;
+  --available-fg: #84e3a6;
+  --available-dot: #3fcf7a;
+  --leased-bg: #112840;
+  --leased-fg: #84c4ff;
+  --leased-dot: #4aa3f5;
+  --busy-bg: #221e49;
+  --busy-fg: #b9aeff;
+  --busy-dot: #8c7bff;
+  --offline-bg: #222834;
+  --offline-fg: #a7b0c0;
+  --offline-dot: #6f7a8d;
+  --quarantined-bg: #3a1716;
+  --quarantined-fg: #ffa39b;
+  --quarantined-dot: #f0594f;
+  --maintenance-bg: #38290c;
+  --maintenance-fg: #f4c870;
+  --maintenance-dot: #e8a419;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
