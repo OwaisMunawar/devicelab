@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>DeviceClass</key>
+	<string>iPhone</string>
+	<key>DeviceName</key>
+	<string>Fixture Phone</string>
+	<key>ProductType</key>
+	<string>iPhone15,4</string>
+	<key>ProductVersion</key>
+	<string>18.2</string>
+	<key>UniqueDeviceID</key>
+	<string>00008000-000000000000000A</string>
+	<key>SerialNumber</key>
+	<string>FIXTURE0001</string>
+</dict>
+</plist>

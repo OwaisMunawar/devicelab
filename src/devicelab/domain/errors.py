@@ -55,3 +55,13 @@ class ForbiddenError(DomainError):
 
 class SettingNotSupportedError(DomainError):
     code = "setting_not_supported"
+
+
+class StepFailure(DomainError):
+    """A workflow step failed on a device. `code` feeds failure classification, so use the
+    codes in `domain.failures` (device_unreachable, wda_crashed, app_crashed, ...)."""
+
+    code = "step_failed"
+
+    def __init__(self, message: str, *, code: str) -> None:
+        super().__init__(message, code=code)
