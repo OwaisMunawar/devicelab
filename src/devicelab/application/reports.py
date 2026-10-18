@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 
 from devicelab.application.ports import Clock, UowFactory
+from devicelab.application.records import AuditRecord, Page
 from devicelab.domain.stats import percentile
 
 CSV_COLUMNS = (
@@ -64,6 +65,12 @@ class ReportService:
             },
             "devices": devices,
         }
+
+    async def audit(
+        self, *, action: str | None, actor: str | None, limit: int, offset: int
+    ) -> Page[AuditRecord]:
+        async with self._uow() as uow:
+            return await uow.audit.search(action=action, actor=actor, limit=limit, offset=offset)
 
     async def export_csv(self, start: datetime, end: datetime) -> str:
         async with self._uow() as uow:

@@ -210,19 +210,44 @@ class StatsRepo(Protocol):
 
 
 class UnitOfWork(Protocol):
-    hosts: HostRepo
-    enrolments: EnrolmentRepo
-    devices: DeviceRepo
-    templates: TemplateRepo
-    jobs: JobRepo
-    leases: LeaseRepo
-    executions: ExecutionRepo
-    artifacts: ArtifactRepo
-    schedules: ScheduleRepo
-    alerts: AlertRepo
-    api_keys: ApiKeyRepo
-    audit: AuditRepo
-    stats: StatsRepo
+    @property
+    def hosts(self) -> HostRepo: ...
+
+    @property
+    def enrolments(self) -> EnrolmentRepo: ...
+
+    @property
+    def devices(self) -> DeviceRepo: ...
+
+    @property
+    def templates(self) -> TemplateRepo: ...
+
+    @property
+    def jobs(self) -> JobRepo: ...
+
+    @property
+    def leases(self) -> LeaseRepo: ...
+
+    @property
+    def executions(self) -> ExecutionRepo: ...
+
+    @property
+    def artifacts(self) -> ArtifactRepo: ...
+
+    @property
+    def schedules(self) -> ScheduleRepo: ...
+
+    @property
+    def alerts(self) -> AlertRepo: ...
+
+    @property
+    def api_keys(self) -> ApiKeyRepo: ...
+
+    @property
+    def audit(self) -> AuditRepo: ...
+
+    @property
+    def stats(self) -> StatsRepo: ...
 
     async def __aenter__(self) -> Self: ...
     async def __aexit__(

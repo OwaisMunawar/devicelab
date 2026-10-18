@@ -277,6 +277,10 @@ class SchedulerService:
             await uow.commit()
         return reclaimed
 
+    async def active_leases(self) -> int:
+        async with self._uow() as uow:
+            return await uow.leases.count_active()
+
     async def queue_depth(self) -> int:
         async with self._uow() as uow:
             return (await uow.jobs.count_by_state()).get(JobState.QUEUED.value, 0)
