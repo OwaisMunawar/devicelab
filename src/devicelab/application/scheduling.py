@@ -240,11 +240,18 @@ class SchedulerService:
         emit(uow, self._events, "job.updated", id=str(job.id), state="failed")
 
     async def reclaim_expired(self) -> int:
-        """Take leases back from agents that stopped heartbeating, and requeue their jobs."""
+        """Take leases back from agents that stopped heartbeating, and requeue their jobs.
+
+        One transaction per lease, and the expired set is only read (not locked) up front:
+        the locks that matter are taken by the lifecycle in its usual order, so a reclaim and
+        a late report from the same agent serialise instead of deadlocking.
+        """
         now = self._clock.now()
-        reclaimed = 0
         async with self._uow() as uow:
-            for lease in await uow.leases.lock_expired(now, self._cfg.reclaim_batch):
+            expired = await uow.leases.list_expired(now, self._cfg.reclaim_batch)
+        reclaimed = 0
+        for lease in expired:
+            async with self._uow() as uow:
                 execution = await uow.executions.get_by_lease(lease.id)
                 if execution is not None:
                     changed = await self._life.fail_execution(
@@ -256,7 +263,10 @@ class SchedulerService:
                     )
                 else:
                     changed = False
-                if not changed and lease.state == LeaseState.ACTIVE.value:
+                if not changed:
+                    current = await uow.leases.get(lease.id, for_update=True)
+                    if current is None or current.state != LeaseState.ACTIVE.value:
+                        continue
                     await uow.leases.update(
                         lease.id,
                         state=LeaseState.EXPIRED.value,
@@ -273,8 +283,8 @@ class SchedulerService:
                     device_id=str(lease.device_id),
                     job_id=str(lease.job_id),
                 )
+                await uow.commit()
                 reclaimed += 1
-            await uow.commit()
         return reclaimed
 
     async def active_leases(self) -> int:

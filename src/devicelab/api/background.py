@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import time
 from collections.abc import Awaitable, Callable
 
@@ -56,8 +55,7 @@ class BackgroundRunner:
                 raise
             except Exception:
                 log.exception("loop_failed", loop=name)
-            with contextlib.suppress(asyncio.CancelledError):
-                await asyncio.sleep(delay)
+            await asyncio.sleep(delay)
 
     async def _schedule_tick(self) -> float | None:
         started = time.perf_counter()

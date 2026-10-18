@@ -77,12 +77,32 @@ class Lifecycle:
 
     # -- execution endings ------------------------------------------------------------
 
+    @staticmethod
+    async def lock_execution(
+        uow: UnitOfWork, execution_id: UUID
+    ) -> tuple[JobRecord, ExecutionRecord] | None:
+        """Lock the job, then the execution.
+
+        Every path that touches both takes locks in the same order (job, execution, lease,
+        device). A late report from an agent and a lease reclaim then queue up behind each
+        other instead of deadlocking.
+        """
+        peek = await uow.executions.get(execution_id)
+        if peek is None:
+            return None
+        job = await uow.jobs.get(peek.job_id, for_update=True)
+        ex = await uow.executions.get(execution_id, for_update=True)
+        if job is None or ex is None:
+            return None
+        return job, ex
+
     async def complete_execution(
         self, uow: UnitOfWork, execution_id: UUID, *, session_restarts: int = 0, reboots: int = 0
     ) -> bool:
-        ex = await uow.executions.get(execution_id, for_update=True)
-        if ex is None or ex.state in TERMINAL_EXECUTION:
+        locked = await self.lock_execution(uow, execution_id)
+        if locked is None or locked[1].state in TERMINAL_EXECUTION:
             return False
+        job, ex = locked
         now = self._clock.now()
         transition_execution(ExecutionState(ex.state), ExecutionState.SUCCEEDED)
         await uow.executions.update(
@@ -98,8 +118,7 @@ class Lifecycle:
             await self._settle_device(
                 uow, device, DeviceState.AVAILABLE, consecutive_infra_failures=0
             )
-        job = await uow.jobs.get(ex.job_id, for_update=True)
-        if job and job.state not in (JobState.CANCELLED.value, JobState.FAILED.value):
+        if job.state not in (JobState.CANCELLED.value, JobState.FAILED.value):
             siblings = await uow.executions.list_for_job(job.id)
             current = [e for e in siblings if e.attempt == ex.attempt]
             if all(e.state == ExecutionState.SUCCEEDED.value or e.id == ex.id for e in current):
@@ -123,9 +142,10 @@ class Lifecycle:
         reboots: int = 0,
     ) -> bool:
         """End an execution as failed (agent said so) or lost (agent stopped answering)."""
-        ex = await uow.executions.get(execution_id, for_update=True)
-        if ex is None or ex.state in TERMINAL_EXECUTION:
+        locked = await self.lock_execution(uow, execution_id)
+        if locked is None or locked[1].state in TERMINAL_EXECUTION:
             return False
+        job, ex = locked
         now = self._clock.now()
         target = ExecutionState.LOST if lost else ExecutionState.FAILED
         transition_execution(ExecutionState(ex.state), target)
@@ -146,8 +166,7 @@ class Lifecycle:
         )
 
         device = await uow.devices.get(ex.device_id, for_update=True)
-        job = await uow.jobs.get(ex.job_id, for_update=True)
-        if device is None or job is None:
+        if device is None:
             return True
 
         infra = is_infrastructure(failure_class)

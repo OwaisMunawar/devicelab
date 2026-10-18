@@ -184,11 +184,15 @@ class DeviceRepo(_Base):
         return [to_record(x, r.DeviceRecord) for x in rows]
 
     async def list_for_host(self, host_id: UUID) -> list[r.DeviceRecord]:
-        rows = await self._all(select(m.Device).where(m.Device.host_id == host_id))
+        rows = await self._all(
+            select(m.Device).where(m.Device.host_id == host_id).order_by(m.Device.id)
+        )
         return [to_record(x, r.DeviceRecord) for x in rows]
 
     async def list_in_states(self, states: list[str]) -> list[r.DeviceRecord]:
-        rows = await self._all(select(m.Device).where(m.Device.state.in_(states)))
+        rows = await self._all(
+            select(m.Device).where(m.Device.state.in_(states)).order_by(m.Device.id)
+        )
         return [to_record(x, r.DeviceRecord) for x in rows]
 
     async def count_by_state(self) -> dict[str, int]:
@@ -308,13 +312,12 @@ class LeaseRepo(_Base):
         rows = await self._all(select(m.Lease).where(m.Lease.state == "active"))
         return [to_record(x, r.LeaseRecord) for x in rows]
 
-    async def lock_expired(self, now: datetime, limit: int) -> list[r.LeaseRecord]:
+    async def list_expired(self, now: datetime, limit: int) -> list[r.LeaseRecord]:
         rows = await self._all(
             select(m.Lease)
             .where(m.Lease.state == "active", m.Lease.expires_at <= now)
             .order_by(m.Lease.expires_at)
             .limit(limit)
-            .with_for_update(skip_locked=True)
         )
         return [to_record(x, r.LeaseRecord) for x in rows]
 

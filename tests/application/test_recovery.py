@@ -227,7 +227,8 @@ async def test_reconcile_after_agent_restart(uow_factory) -> None:  # type: igno
     await env.template()
     survivor_job, doomed_job = await env.submit(), await env.submit()
     await env.svc.scheduler.tick()
-    survivor, doomed = await env.dispatch(host)
+    by_job = {i.execution.job_id: i for i in await env.dispatch(host)}
+    survivor, doomed = by_job[survivor_job.id], by_job[doomed_job.id]
 
     # The agent reconnects knowing only about one of them, plus one it should not be running.
     ghost = env.refs([survivor])[0].model_copy(update={"execution_id": str(uuid4())})

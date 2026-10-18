@@ -152,12 +152,15 @@ class ExecutionService:
     # -- progress reports -------------------------------------------------------------
 
     async def _authorise(
-        self, uow: UnitOfWork, execution_id: str, fencing_token: int
+        self, uow: UnitOfWork, execution_id: str, fencing_token: int, *, lock: bool = True
     ) -> ExecutionRecord:
+        """Check the report against the lease. `lock=False` leaves row locking to the caller,
+        which must then take them in lifecycle order (job first)."""
         try:
-            ex = await uow.executions.get(UUID(execution_id), for_update=True)
+            key = UUID(execution_id)
         except ValueError:
-            ex = None
+            raise NotFoundError("execution not found", code="execution_not_found") from None
+        ex = await uow.executions.get(key, for_update=lock)
         if ex is None:
             raise NotFoundError("execution not found", code="execution_not_found")
         lease = await uow.leases.get(ex.lease_id)
@@ -171,15 +174,20 @@ class ExecutionService:
     async def step_started(self, msg: StepStarted) -> None:
         now = self._clock.now()
         async with self._uow() as uow:
-            ex = await self._authorise(uow, msg.execution_id, msg.fencing_token)
+            ex = await self._authorise(uow, msg.execution_id, msg.fencing_token, lock=False)
+            locked = await self._life.lock_execution(uow, ex.id)
+            if locked is None:
+                raise NotFoundError("execution not found", code="execution_not_found")
+            job, ex = locked
+            if ex.state in TERMINAL_EXECUTION:
+                raise StaleFenceError("execution already finished")
             if ex.state == ExecutionState.PENDING.value:
                 transition_execution(ExecutionState.PENDING, ExecutionState.RUNNING)
                 await uow.executions.update(ex.id, state="running", started_at=now)
                 device = await uow.devices.get(ex.device_id, for_update=True)
                 if device and device.state == DeviceState.LEASED.value:
                     await self._life.set_device_state(uow, device, DeviceState.BUSY)
-                job = await uow.jobs.get(ex.job_id, for_update=True)
-                if job and job.state == JobState.LEASED.value:
+                if job.state == JobState.LEASED.value:
                     transition_job(JobState.LEASED, JobState.RUNNING)
                     await uow.jobs.update(job.id, state="running")
                     emit(uow, self._events, "job.updated", id=str(job.id), state="running")
@@ -283,13 +291,14 @@ class ExecutionService:
 
     async def execution_finished(self, msg: ExecutionFinished) -> None:
         async with self._uow() as uow:
-            ex = await self._authorise(uow, msg.execution_id, msg.fencing_token)
+            ex = await self._authorise(uow, msg.execution_id, msg.fencing_token, lock=False)
+            applied: bool
             if msg.state == "succeeded":
-                await self._life.complete_execution(
+                applied = await self._life.complete_execution(
                     uow, ex.id, session_restarts=msg.session_restarts, reboots=msg.reboots
                 )
             elif msg.state == "failed":
-                await self._life.fail_execution(
+                applied = await self._life.fail_execution(
                     uow,
                     ex.id,
                     failure_class=classify(msg.failure_code, msg.error or ""),
@@ -298,7 +307,17 @@ class ExecutionService:
                     reboots=msg.reboots,
                 )
             else:
-                await self._life.cancel_execution(uow, ex, msg.error or "cancelled by agent")
+                locked = await self._life.lock_execution(uow, ex.id)
+                applied = locked is not None and locked[1].state not in TERMINAL_EXECUTION
+                if locked is not None and applied:
+                    await self._life.cancel_execution(
+                        uow, locked[1], msg.error or "cancelled by agent"
+                    )
+            if not applied:
+                # Someone (a reclaim, an operator) ended it between the fence check and the lock.
+                raise StaleFenceError(
+                    "execution already finished", details={"execution": msg.execution_id}
+                )
             await uow.commit()
 
     # -- reads ------------------------------------------------------------------------

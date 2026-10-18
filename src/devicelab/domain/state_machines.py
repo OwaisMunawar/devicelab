@@ -15,7 +15,7 @@ DEVICE_TRANSITIONS: Mapping[DeviceState, frozenset[DeviceState]] = {
     D.BUSY: frozenset({D.AVAILABLE, D.OFFLINE, D.QUARANTINED, D.MAINTENANCE}),
     D.OFFLINE: frozenset({D.AVAILABLE, D.QUARANTINED, D.MAINTENANCE}),
     # A quarantined device stays put until an operator returns it to service.
-    D.QUARANTINED: frozenset({D.AVAILABLE, D.MAINTENANCE}),
+    D.QUARANTINED: frozenset({D.AVAILABLE, D.OFFLINE, D.MAINTENANCE}),
     D.MAINTENANCE: frozenset({D.AVAILABLE, D.OFFLINE, D.QUARANTINED}),
 }
 

@@ -158,15 +158,21 @@ class FleetService:
 
     async def register_inventory(self, host: HostRecord, reports: Sequence[DeviceReport]) -> None:
         now = self._clock.now()
+        corrupt: list[tuple[UUID, Sequence[str]]] = []
         async with self._uow() as uow:
             known = {d.udid: d for d in await uow.devices.list_for_host(host.id)}
             reported: set[str] = set()
-            for report in reports:
+            # Device rows are always locked in id order (see Lifecycle.lock_execution).
+            pairs = [
+                (r, known.get(r.udid) or await uow.devices.get_by_udid(r.udid)) for r in reports
+            ]
+            pairs.sort(key=lambda p: (p[1] is None, p[1].id.int if p[1] else 0))
+            for report, found in pairs:
                 reported.add(report.udid)
-                existing = known.get(report.udid) or await uow.devices.get_by_udid(report.udid)
+                existing = found
                 if existing is None:
                     connected = report.health.connectivity == "connected"
-                    device = DeviceRecord(
+                    existing = DeviceRecord(
                         id=self._ids(),
                         host_id=host.id,
                         udid=report.udid,
@@ -182,8 +188,7 @@ class FleetService:
                         labels=list(report.labels),
                         state_changed_at=now,
                     )
-                    await uow.devices.add(device)
-                    existing = device
+                    await uow.devices.add(existing)
                 else:
                     await uow.devices.update(
                         existing.id,
@@ -195,11 +200,18 @@ class FleetService:
                         model_family=report.model_family,
                         ios_version=report.ios_version,
                     )
-                await self._apply_health(uow, existing, report.health, now)
+                assessment = assess_health(
+                    report.health.battery_pct, report.health.thermal, report.health.storage_free_gb
+                )
+                if assessment.status is HealthStatus.CORRUPT:
+                    corrupt.append((existing.id, assessment.reasons))
+                else:
+                    await self._apply_health(uow, existing, report.health, now)
             for udid, device in known.items():
                 if udid not in reported and device.state == DeviceState.AVAILABLE.value:
                     await self._life.set_device_state(uow, device, DeviceState.OFFLINE)
             await uow.commit()
+        await self._quarantine_corrupt(corrupt)
 
     async def heartbeat(
         self,
@@ -207,19 +219,36 @@ class FleetService:
         health: Sequence[HealthReport],
         executions: Sequence[ActiveExecution],
     ) -> HeartbeatResult:
+        """Three short transactions rather than one long one: lease renewals, then healthy
+        devices in id order, then each corrupt device on its own. That keeps lock order
+        uniform across the system (job, execution, lease, device) and each hold brief."""
         now = self._clock.now()
         orphans: list[str] = []
         async with self._uow() as uow:
-            by_udid = {d.udid: d for d in await uow.devices.list_for_host(host.id)}
-            for report in health:
-                device = by_udid.get(report.udid)
-                if device is not None:
-                    await self._apply_health(uow, device, report, now)
-            for ref in executions:
+            for ref in sorted(executions, key=lambda r: r.lease_id):
                 if not await self._renew(uow, host.id, ref, now):
                     orphans.append(ref.execution_id)
+            await uow.commit()
+
+        corrupt: list[tuple[UUID, Sequence[str]]] = []
+        async with self._uow() as uow:
+            devices = await uow.devices.list_for_host(host.id)  # ordered by id
+            by_udid = {d.udid: d for d in devices}
+            wanted = {r.udid: r for r in health if r.udid in by_udid}
+            for device in devices:
+                report = wanted.get(device.udid)
+                if report is None:
+                    continue
+                assessment = assess_health(
+                    report.battery_pct, report.thermal, report.storage_free_gb
+                )
+                if assessment.status is HealthStatus.CORRUPT:
+                    corrupt.append((device.id, assessment.reasons))
+                else:
+                    await self._apply_health(uow, device, report, now)
             await uow.hosts.update(host.id, last_seen=now, connected=True)
             await uow.commit()
+        await self._quarantine_corrupt(corrupt)
         return HeartbeatResult(orphans)
 
     async def _renew(
@@ -246,11 +275,6 @@ class FleetService:
     async def _apply_health(
         self, uow: UnitOfWork, device: DeviceRecord, report: HealthReport, now: datetime
     ) -> None:
-        assessment = assess_health(report.battery_pct, report.thermal, report.storage_free_gb)
-        if assessment.status is HealthStatus.CORRUPT:
-            await self._handle_corrupt(uow, device, assessment.reasons, now)
-            return
-
         changes: dict[str, object] = {
             "last_seen": now,
             "battery_pct": report.battery_pct,
@@ -293,27 +317,29 @@ class FleetService:
         await uow.devices.update(device.id, **changes)
         emit(uow, self._events, "device.health", id=str(device.id))
 
-    async def _handle_corrupt(
-        self, uow: UnitOfWork, device: DeviceRecord, reasons: Sequence[str], now: datetime
-    ) -> None:
-        if device.state == DeviceState.QUARANTINED.value:
-            return
-        lease = await uow.leases.get_active_for_device(device.id)
-        if lease is not None:
-            execution = await uow.executions.get_by_lease(lease.id)
-            if execution is not None:
-                await self._life.fail_execution(
-                    uow,
-                    execution.id,
-                    failure_class=FailureClass.DEVICE_UNREACHABLE,
-                    error="device reported corrupt health: " + "; ".join(reasons),
-                    lost=True,
-                )
-        fresh = await uow.devices.get(device.id, for_update=True)
-        if fresh is not None and fresh.state != DeviceState.QUARANTINED.value:
-            await self._life.quarantine_device(
-                uow, fresh, "corrupt health report: " + "; ".join(reasons)
-            )
+    async def _quarantine_corrupt(self, corrupt: Sequence[tuple[UUID, Sequence[str]]]) -> None:
+        for device_id, reasons in corrupt:
+            async with self._uow() as uow:
+                device = await uow.devices.get(device_id)
+                if device is None or device.state == DeviceState.QUARANTINED.value:
+                    continue
+                lease = await uow.leases.get_active_for_device(device_id)
+                if lease is not None:
+                    execution = await uow.executions.get_by_lease(lease.id)
+                    if execution is not None:
+                        await self._life.fail_execution(
+                            uow,
+                            execution.id,
+                            failure_class=FailureClass.DEVICE_UNREACHABLE,
+                            error="device reported corrupt health: " + "; ".join(reasons),
+                            lost=True,
+                        )
+                fresh = await uow.devices.get(device_id, for_update=True)
+                if fresh is not None and fresh.state != DeviceState.QUARANTINED.value:
+                    await self._life.quarantine_device(
+                        uow, fresh, "corrupt health report: " + "; ".join(reasons)
+                    )
+                await uow.commit()
 
     # -- background maintenance -------------------------------------------------------
 
@@ -329,11 +355,15 @@ class FleetService:
                     emit(uow, self._events, "host.updated", id=str(host.id), connected=False)
                     disconnected += 1
 
-            active = {lease.device_id: lease for lease in await uow.leases.list_active()}
             states = [s.value for s in DeviceState if s is not DeviceState.QUARANTINED]
-            for device in await uow.devices.list_in_states(states):
+            for candidate in await uow.devices.list_in_states(states):
+                # The listing above is only a hint. Other transactions grant and release
+                # leases all the time, so decide on rows we hold locked and have re-read.
+                device = await uow.devices.get(candidate.id, for_update=True)
+                if device is None:
+                    continue
+                lease = await uow.leases.get_active_for_device(device.id)
                 stale = device.last_seen is None or device.last_seen < cutoff
-                lease = active.get(device.id)
                 state = DeviceState(device.state)
                 if state is DeviceState.AVAILABLE and lease is None and stale:
                     await self._life.set_device_state(uow, device, DeviceState.OFFLINE)
