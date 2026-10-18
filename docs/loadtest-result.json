@@ -1,0 +1,45 @@
+{
+  "devices": 50,
+  "sites": 5,
+  "jobs_submitted": 525,
+  "jobs_succeeded": 520,
+  "jobs_failed": 0,
+  "unsatisfiable_left_queued": 5,
+  "wall_s": 23.23,
+  "leases_granted": 566,
+  "scheduling_throughput_per_s": 26.0,
+  "completed_jobs_per_s": 22.4,
+  "queue_wait_s": {
+    "p50": 9.822,
+    "p95": 18.14,
+    "p99": 19.545,
+    "max": 19.881
+  },
+  "queue_wait_high_priority_p50_s": 3.513,
+  "queue_wait_low_priority_p50_s": 16.875,
+  "tick_ms": {
+    "p50": 28.941,
+    "p95": 87.607,
+    "p99": 192.042,
+    "max": 1485.009
+  },
+  "scheduler_capacity_assignments_per_s": 49.1,
+  "double_leases": 0,
+  "live_exclusivity_violations": 0,
+  "live_exclusivity_polls_note": "polled every 50 ms during the run",
+  "requeues": 23,
+  "db_connections": {
+    "mean": 27.2,
+    "max": 32.0
+  },
+  "db_cpu_percent": {
+    "mean": 44.5,
+    "max": 178.5
+  },
+  "api_submit_ms": {
+    "p50": 126.022,
+    "p95": 432.534,
+    "p99": 691.815,
+    "max": 708.112
+  }
+}

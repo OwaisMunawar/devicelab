@@ -1,0 +1,24 @@
+name: calculator-check
+description: Hardware validation on a physical iPhone. Opens the built-in Calculator, computes 7 + 8 and checks the result.
+requirements:
+  count: 1
+  labels: [physical]
+steps:
+  - id: open_calculator
+    type: launch_app
+    bundle_id: com.apple.calculator
+    timeout_s: 120
+  - id: add
+    type: appium_actions
+    bundle_id: com.apple.calculator
+    # The first UI step starts Appium and, on a cold cache, builds and installs WebDriverAgent.
+    timeout_s: 900
+    actions:
+      - {action: tap, by: accessibility_id, value: "7"}
+      - {action: tap, by: accessibility_id, value: "add"}
+      - {action: tap, by: accessibility_id, value: "8"}
+      - {action: tap, by: accessibility_id, value: "equals"}
+      - {action: assert_text, by: accessibility_id, value: "Result", contains: "15"}
+  - id: evidence
+    type: screenshot
+    artifact_name: calculator-result

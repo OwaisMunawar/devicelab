@@ -14,6 +14,12 @@ steps:
     type: launch_app
     bundle_id: com.apple.Preferences
     locale: "{{ params.locale }}"
+  - id: settle_dark
+    type: appium_actions
+    # Give the UI a moment to re-render after an appearance change before capturing it.
+    # The first UI step starts Appium and, on a cold cache, builds WebDriverAgent.
+    actions: [{action: wait, seconds: 2}]
+    timeout_s: 900
   - id: shot_dark
     type: screenshot
     artifact_name: settings-dark
@@ -21,6 +27,9 @@ steps:
     type: set_device_setting
     setting: appearance
     value: light
+  - id: settle_light
+    type: appium_actions
+    actions: [{action: wait, seconds: 2}]
   - id: shot_light
     type: screenshot
     artifact_name: settings-light

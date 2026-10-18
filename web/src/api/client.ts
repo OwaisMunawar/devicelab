@@ -111,9 +111,11 @@ export async function streamEvents(
   path: string,
   signal: AbortSignal,
   onEvent: (event: StreamEvent) => void,
+  onOpen?: () => void,
 ): Promise<void> {
   const response = await fetch(path, { headers: headers({ Accept: "text/event-stream" }), signal });
   if (!response.ok || !response.body) throw toApiError(response.status, null);
+  onOpen?.();
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";
   for (;;) {

@@ -50,13 +50,21 @@ export function useLiveEvents(enabled: boolean): LiveStatus {
       while (!isAborted()) {
         try {
           setStatus((s) => (s === "live" ? s : "connecting"));
-          await streamEvents("/v1/events", controller.signal, (event) => {
-            setStatus("live");
-            delay = 1000;
-            for (const key of keysForTopic(event.event, event.data))
-              pending.set(key.join("/"), key);
-            scheduled.timer ??= setTimeout(flush, 250);
-          });
+          await streamEvents(
+            "/v1/events",
+            controller.signal,
+            (event) => {
+              setStatus("live");
+              delay = 1000;
+              for (const key of keysForTopic(event.event, event.data))
+                pending.set(key.join("/"), key);
+              scheduled.timer ??= setTimeout(flush, 250);
+            },
+            () => {
+              setStatus("live");
+              delay = 1000;
+            },
+          );
         } catch {
           if (isAborted()) return;
         }

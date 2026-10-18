@@ -88,10 +88,11 @@ class StepExecutor:
                 await self.reboot(ctx)
 
     async def _capture(self, ctx: StepContext) -> bytes:
-        try:
-            return await self._provider.screenshot(ctx.udid)
-        except SettingNotSupportedError:
+        """Prefer the automation session when there is one, so what is captured is what the
+        driver sees; fall back to the provider for agents running without Appium."""
+        if self._ui is not None:
             return await (await self._session(ctx, None)).screenshot()
+        return await self._provider.screenshot(ctx.udid)
 
     async def _capture_matrix(self, ctx: StepContext, step: CaptureScreenshots) -> None:
         for locale in step.locales:

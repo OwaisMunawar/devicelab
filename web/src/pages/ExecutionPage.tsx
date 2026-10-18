@@ -96,7 +96,7 @@ export function ExecutionPage() {
                 description="Screenshots and logs appear here as steps finish."
               />
             ) : (
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap items-start gap-4">
                 {shots.map((a) => (
                   <ArtifactImage key={a.id} artifact={a} />
                 ))}
