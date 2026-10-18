@@ -59,7 +59,12 @@ DEMO_ACTOR = Actor("key:demo-operator", Role.OPERATOR)
 
 
 def _examples_dir() -> Path:
-    return Path(__file__).resolve().parents[2] / "examples" / "templates"
+    # Container images run from /app; a source checkout keeps examples/ beside src/.
+    candidates = (
+        Path.cwd() / "examples" / "templates",
+        Path(__file__).resolve().parents[2] / "examples" / "templates",
+    )
+    return next((c for c in candidates if c.is_dir()), candidates[0])
 
 
 async def seed_demo(runtime: Runtime, examples_dir: Path | None = None) -> None:

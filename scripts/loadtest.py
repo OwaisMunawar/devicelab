@@ -61,7 +61,10 @@ class Report:
     queue_wait_high_priority_p50_s: float = 0.0
     queue_wait_low_priority_p50_s: float = 0.0
     tick_ms: dict[str, float] = field(default_factory=dict)
+    scheduler_capacity_assignments_per_s: float = 0.0
     double_leases: int = -1
+    live_exclusivity_violations: int = -1
+    live_exclusivity_polls_note: str = "polled every 50 ms during the run"
     requeues: int = 0
     db_connections: dict[str, float] = field(default_factory=dict)
     db_cpu_percent: dict[str, float] = field(default_factory=dict)
@@ -85,6 +88,24 @@ def job_mix(rng: random.Random, count: int) -> list[dict[str, Any]]:
             body["requirement"] = {"count": 2}
         jobs.append(body)
     return jobs
+
+
+async def watch_exclusivity(engine: Any, stop: asyncio.Event) -> int:
+    """Poll the live lease table for any device holding two active leases at once."""
+    violations = 0
+    while not stop.is_set():
+        async with engine.connect() as conn:
+            rows = (
+                await conn.execute(
+                    text(
+                        "SELECT device_id FROM leases WHERE state = 'active' "
+                        "GROUP BY device_id HAVING count(*) > 1"
+                    )
+                )
+            ).all()
+        violations += len(rows)
+        await asyncio.sleep(0.05)
+    return violations
 
 
 async def sample_db(
@@ -163,6 +184,7 @@ async def run(
     )
     live = Live(settings, free_port(), background=True)
     tick_durations: list[float] = []
+    tick_assigned: list[int] = []
     original_tick = SchedulerService.tick
 
     async def timed_tick(self: SchedulerService) -> Any:
@@ -170,6 +192,7 @@ async def run(
         result = await original_tick(self)
         if result.jobs_assigned:
             tick_durations.append((time.perf_counter() - started) * 1000)
+            tick_assigned.append(result.jobs_assigned)
         return result
 
     SchedulerService.tick = timed_tick  # type: ignore[method-assign]
@@ -216,6 +239,7 @@ async def run(
         await asyncio.gather(*(a.connected.wait() for a in agents))
 
         sampler = asyncio.create_task(sample_db(engine, container, stop_sampling))
+        watcher = asyncio.create_task(watch_exclusivity(engine, stop_sampling))
         bodies = job_mix(rng, jobs)
         unsatisfiable = 5
         bodies += [
@@ -252,6 +276,7 @@ async def run(
         report.api_submit_ms = dist(submit_ms, 50, 95, 99)
         stop_sampling.set()
         connections, cpu = await sampler
+        report.live_exclusivity_violations = await watcher
         if connections:
             report.db_connections = {
                 "mean": round(statistics.mean(connections), 1),
@@ -334,6 +359,9 @@ async def run(
                 ).scalar_one()
             )
         report.tick_ms = dist(tick_durations, 50, 95, 99)
+        busy_s = sum(tick_durations) / 1000
+        if busy_s:
+            report.scheduler_capacity_assignments_per_s = round(sum(tick_assigned) / busy_s, 1)
         del metrics_text
     finally:
         SchedulerService.tick = original_tick  # type: ignore[method-assign]
@@ -387,7 +415,7 @@ def main() -> None:
     print(json.dumps(asdict(report), indent=2))
     if args.json:
         args.json.write_text(json.dumps(asdict(report), indent=2) + "\n")
-    if report.double_leases != 0:
+    if report.double_leases != 0 or report.live_exclusivity_violations != 0:
         raise SystemExit("FAIL: a device was leased twice at the same time")
     if (
         report.jobs_succeeded + report.jobs_failed + report.unsatisfiable_left_queued

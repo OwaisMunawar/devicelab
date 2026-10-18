@@ -117,6 +117,18 @@ class JobRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class QueuedJob:
+    """The few columns the scheduler needs to rank a job. Specs and params stay in the table
+    until a job is actually assigned, so a long queue costs a scan of small rows."""
+
+    id: UUID
+    priority: int
+    queued_at: datetime
+    requirement: dict[str, Any]
+    excluded_device_ids: list[UUID]
+
+
+@dataclass(frozen=True, slots=True)
 class LeaseRecord:
     id: UUID
     job_id: UUID

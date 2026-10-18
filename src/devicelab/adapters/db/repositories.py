@@ -11,7 +11,7 @@ from typing import Any, Self
 from uuid import UUID
 
 import structlog
-from sqlalchemy import Select, and_, delete, func, select, text, update
+from sqlalchemy import Select, and_, delete, func, insert, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -252,15 +252,21 @@ class JobRepo(_Base):
         )
         return to_record(row, r.JobRecord) if row else None
 
-    async def lock_queued(self, limit: int) -> list[r.JobRecord]:
-        rows = await self._all(
-            select(m.Job)
+    async def lock_queued(self, limit: int) -> list[r.QueuedJob]:
+        result = await self.s.execute(
+            select(
+                m.Job.id,
+                m.Job.priority,
+                m.Job.queued_at,
+                m.Job.requirement,
+                m.Job.excluded_device_ids,
+            )
             .where(m.Job.state == "queued")
             .order_by(m.Job.priority.desc(), m.Job.queued_at, m.Job.id)
             .limit(limit)
-            .with_for_update(skip_locked=True)
+            .with_for_update(skip_locked=True, of=m.Job)
         )
-        return [to_record(x, r.JobRecord) for x in rows]
+        return [r.QueuedJob(*row) for row in result.all()]
 
     async def update(self, job_id: UUID, **changes: Any) -> None:
         await self._update(m.Job, job_id, changes)
@@ -395,6 +401,10 @@ class ExecutionRepo(_Base):
             .order_by(m.Execution.created_at)
         )
         return [to_record(x, r.ExecutionRecord) for x in rows]
+
+    async def add_steps(self, records: list[r.StepRecord]) -> None:
+        if records:
+            await self.s.execute(insert(m.ExecutionStep), [to_values(x) for x in records])
 
     async def upsert_step(self, record: r.StepRecord) -> None:
         values = to_values(record)

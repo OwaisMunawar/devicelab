@@ -104,18 +104,21 @@ class SchedulerService:
         self._gateway = gateway
 
     async def tick(self) -> TickResult:
-        now = self._clock.now()
         async with self._uow() as uow:
-            jobs = await uow.jobs.lock_queued(self._cfg.scan_limit)
-            if not jobs:
-                return TickResult()
+            # Devices first: with none free there is nothing to plan, and the check is cheap.
             devices = await uow.devices.lock_available()
             if not devices:
                 return TickResult()
+            jobs = await uow.jobs.lock_queued(self._cfg.scan_limit)
+            if not jobs:
+                return TickResult()
+            # Read the clock only once the device locks are held: any lease we are about to
+            # supersede was released (and timestamped) before we could see its device as free,
+            # so acquired_at is always later than the previous holder's released_at.
+            now = self._clock.now()
             hosts = {h.id: h for h in await uow.hosts.list_all()}
             active = await uow.leases.active_counts_by_host()
 
-            by_job = {j.id: j for j in jobs}
             by_device = {d.id: d for d in devices}
             plan = plan_assignments(
                 [
@@ -140,7 +143,9 @@ class SchedulerService:
 
             assigned = leased = failed = 0
             for assignment in plan:
-                job = by_job[assignment.job_id]
+                job = await uow.jobs.get(assignment.job_id)
+                if job is None:
+                    continue
                 chosen = [by_device[i] for i in assignment.device_ids]
                 try:
                     await self._grant(uow, job, chosen, now)
@@ -200,8 +205,8 @@ class SchedulerService:
                 steps=steps,
             )
             await uow.executions.add(execution)
-            for index, step in enumerate(steps):
-                await uow.executions.upsert_step(
+            await uow.executions.add_steps(
+                [
                     StepRecord(
                         id=self._ids(),
                         execution_id=execution.id,
@@ -210,7 +215,9 @@ class SchedulerService:
                         type=step["type"],
                         name=step.get("name") or step["id"],
                     )
-                )
+                    for index, step in enumerate(steps)
+                ]
+            )
             host_id = device.host_id
             uow.on_commit(lambda h=host_id: self._gateway.wake(h))  # type: ignore[misc]
 
