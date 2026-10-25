@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -53,15 +53,15 @@ wheels = [
 
 [[package]]
 name = "appium-python-client"
-version = "6.0.7"
+version = "6.0.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "selenium" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cc/2a/41f8493439042b059d6f11dd245362b34584d7cceeb62b16161e72196722/appium_python_client-6.0.7.tar.gz", hash = "sha256:e60ce15b84a5478e2a53a1da1a5a877dbdcf5a2386800aec2f097cb649fa94ce", size = 238792, upload-time = "2026-09-18T22:08:18.579Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/97/84/f686d4edd6376b983c48dd669688e3cc07fe90f424e884bb9c0cd9cf6b9e/appium_python_client-6.0.8.tar.gz", hash = "sha256:4c83214b8f51732d6b6cfcd11ad3b45483d78c46fbbce6c5894176c4d1f589cd", size = 250132, upload-time = "2026-10-20T15:02:56.493Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/36/48187ddea92fe0783bfb075596af981e5b9f7f3949312bb8355d32ade3f9/appium_python_client-6.0.7-py3-none-any.whl", hash = "sha256:7c8fb1258118385670c27dd37d38e0cd2feb4650779e731444448562b2d8de7d", size = 343464, upload-time = "2026-09-18T22:08:16.917Z" },
+    { url = "https://files.pythonhosted.org/packages/16/8e/3a5d4f5beb127c366caa45692044353364e41cab39e7fb6d344075960835/appium_python_client-6.0.8-py3-none-any.whl", hash = "sha256:b5dfcefb618161c39e15ffac13aac2394d78272ae67263a975296bfca4d82fc2", size = 343529, upload-time = "2026-10-20T15:02:54.711Z" },
 ]
 
 [[package]]
