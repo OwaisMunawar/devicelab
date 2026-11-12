@@ -103,15 +103,25 @@ async def test_concurrent_ticks_never_double_lease(uow_factory) -> None:  # type
     for _ in range(40):
         await env.submit()
 
-    await asyncio.gather(*(env.svc.scheduler.tick() for _ in range(8)))
-    await asyncio.gather(*(env.svc.scheduler.tick() for _ in range(8)))
-
-    async with uow_factory() as uow:
-        rows = (
-            await uow.session.execute(
+    async def active_leases_per_device() -> list[tuple[str, int]]:
+        async with uow_factory() as uow:
+            result = await uow.session.execute(
                 text("SELECT device_id, count(*) FROM leases WHERE state='active' GROUP BY 1")
             )
-        ).all()
+            return [(str(device_id), n) for device_id, n in result.all()]
+
+    # Racing ticks may lose individual leases to the unique index, so the invariant is
+    # checked after every round but the fleet is only expected to fill once the racing stops.
+    for _ in range(2):
+        await asyncio.gather(*(env.svc.scheduler.tick() for _ in range(8)))
+        assert all(n == 1 for _, n in await active_leases_per_device())
+    for _ in range(5):
+        if len(await active_leases_per_device()) == 12:
+            break
+        await env.svc.scheduler.tick()
+
+    rows = await active_leases_per_device()
+    async with uow_factory() as uow:
         leased_jobs = (await uow.jobs.count_by_state()).get("leased", 0)
     assert len(rows) == 12
     assert all(n == 1 for _, n in rows)
